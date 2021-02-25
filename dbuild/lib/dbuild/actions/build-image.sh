@@ -124,6 +124,11 @@ while read line; do
 	fi
 done <"${DBUILD_ROOTFS_DIR}/etc/fstab"
 
+if type post_gen_fstab >/dev/null 2>&1; then
+	msg "Running post hook for fstab generation"
+	post_gen_fstab
+fi
+
 if [[ -z "${NOT_LIVE}" ]]; then
 	msg "Building a live disk image"
 
@@ -229,6 +234,11 @@ EOF
 		dd if="${DBUILD_BUILD_DIR}/${disk_name}-${EXPIDUS_VERSION}-${TARGET_ARCH}.img" of="/dev/mapper/${loop}" bs=1M status=none || kpartx -dv "${DBUILD_BUILD_DIR}/${DISK_NAME}"
 		i=$((i + 1))
 	done
+
+	if type post_build_combo_disk >/dev/null 2>&1; then
+		msg "Running post-build combo disk"
+		post_build_combo_disk || (sync && kpartx -d "${DBUILD_BUILD_DIR}/${DISK_NAME}"; exit 1)
+	fi
 
 	sync
 	kpartx -d "${DBUILD_BUILD_DIR}/${DISK_NAME}" >/dev/null
